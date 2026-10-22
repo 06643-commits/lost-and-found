@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ของหายได้คืน</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mitr:wght@400;500;600&family=Sarabun:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: one narrow column like a school notice board; each found item is a card with a yellow lost-property tag clipped to its photo. Chat is list + thread, side by side on wide screens. */
+:root{
+  --bg:#EEF1F5; --surface:#FFFFFF; --sunk:#E4E8EE; --ink:#162033; --muted:#5A6476; --line:#D6DCE5;
+  --accent:#1E4FCC; --accent-ink:#FFFFFF; --accent-soft:#E2E9FB;
+  --tag:#FFD84A; --tag-ink:#2A2200; --ok:#1C7C4A; --ok-soft:#DDF2E6; --warn:#B4361F;
+  --bubble-me:#1E4FCC; --bubble-me-ink:#FFFFFF; --bubble:#E7EBF1;
+  --f-display:"Mitr","Sarabun",system-ui,sans-serif;
+  --f-body:"Sarabun",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --r:12px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E131B; --surface:#161E2A; --sunk:#1D2735; --ink:#E6EBF2; --muted:#98A3B5; --line:#2A3546;
+  --accent:#7E9EFF; --accent-ink:#0B1222; --accent-soft:#1F2C4A;
+  --tag:#F2C94C; --tag-ink:#231B00; --ok:#5BC98B; --ok-soft:#173326; --warn:#FF8A73;
+  --bubble-me:#3A5FD0; --bubble-me-ink:#FFFFFF; --bubble:#232E3E; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0E131B; --surface:#161E2A; --sunk:#1D2735; --ink:#E6EBF2; --muted:#98A3B5; --line:#2A3546;
+  --accent:#7E9EFF; --accent-ink:#0B1222; --accent-soft:#1F2C4A;
+  --tag:#F2C94C; --tag-ink:#231B00; --ok:#5BC98B; --ok-soft:#173326; --warn:#FF8A73;
+  --bubble-me:#3A5FD0; --bubble-me-ink:#FFFFFF; --bubble:#232E3E; color-scheme:dark }
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.55}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:760px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
+header.top .wrap{display:flex;align-items:center;gap:12px;padding-block:10px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;margin-right:auto;min-width:0}
+.brand .mark{width:34px;height:34px;border-radius:8px;background:var(--tag);color:var(--tag-ink);display:grid;place-items:center;font-family:var(--f-mono);font-weight:600;font-size:12px;position:relative}
+.brand .mark::after{content:"";position:absolute;top:5px;right:5px;width:5px;height:5px;border-radius:50%;background:var(--surface)}
+.brand h1{font-family:var(--f-display);font-weight:500;font-size:20px;margin:0;line-height:1.2}
+.brand small{display:block;color:var(--muted);font-size:12.5px}
+nav.tabs{display:flex;gap:4px;background:var(--sunk);padding:4px;border-radius:999px}
+nav.tabs button{border:0;background:transparent;padding:6px 16px;border-radius:999px;cursor:pointer;font-weight:500;display:flex;align-items:center;gap:6px}
+nav.tabs button[aria-selected="true"]{background:var(--surface);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.badge{min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:var(--warn);color:#fff;font-size:12px;display:inline-grid;place-items:center;font-variant-numeric:tabular-nums}
+
+main{padding-block:20px 48px}
+.notice{background:var(--accent-soft);border-radius:var(--r);padding:12px 14px;font-size:14.5px;margin-bottom:16px}
+.notice.err{background:transparent;border:1px solid var(--warn);color:var(--warn)}
+
+/* composer */
+.composer{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;display:grid;gap:14px}
+.composer h2{font-family:var(--f-display);font-weight:500;font-size:19px;margin:0}
+.shot{display:grid;grid-template-columns:120px 1fr;gap:14px;align-items:stretch}
+.photo-pick{position:relative;aspect-ratio:1;max-width:100%;border:2px dashed var(--line);border-radius:12px;display:grid;place-items:center;text-align:center;cursor:pointer;color:var(--muted);font-size:13.5px;overflow:hidden;background:var(--sunk)}
+.photo-pick:hover{border-color:var(--accent);color:var(--accent)}
+.photo-pick svg{width:28px;height:28px;display:block;margin:0 auto 4px}
+.photo-pick img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.photo-pick input{position:absolute;inset:0;opacity:0;cursor:pointer}
+textarea{width:100%;min-height:100%;resize:vertical;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--bg)}
+.row{display:flex;flex-wrap:wrap;gap:10px}
+.field{display:grid;gap:4px;flex:1 1 160px;min-width:0}
+.field label{font-size:13px;color:var(--muted);font-weight:500}
+select,input[type=search],input[type=text]{width:100%;border:1px solid var(--line);border-radius:10px;padding:9px 10px;background:var(--bg)}
+.actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.btn{border:0;border-radius:10px;padding:10px 18px;background:var(--accent);color:var(--accent-ink);font-weight:600;cursor:pointer}
+.btn:disabled{opacity:.55;cursor:default}
+.btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--line)}
+.btn.small{padding:6px 12px;font-size:14px;border-radius:8px}
+.btn.danger{color:var(--warn)}
+.hint{font-size:13px;color:var(--muted)}
+
+/* filters */
+.filters{margin-top:28px;display:grid;gap:10px}
+.filters-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.filters-head h2{font-family:var(--f-display);font-weight:500;font-size:19px;margin:0}
+.count{color:var(--muted);font-size:14px;font-variant-numeric:tabular-nums}
+.chk{display:flex;align-items:center;gap:6px;font-size:14px;color:var(--muted);cursor:pointer}
+
+/* cards */
+.feed{display:grid;gap:16px;margin-top:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.card.returned .pic img{filter:grayscale(.85);opacity:.7}
+.pic{position:relative;background:var(--sunk);aspect-ratio:4/3;max-width:100%}
+.pic img{width:100%;height:100%;object-fit:cover;display:block}
+.pic.none{aspect-ratio:auto;height:64px}
+.tag{position:absolute;top:12px;left:12px;background:var(--tag);color:var(--tag-ink);font-family:var(--f-mono);font-weight:600;font-size:13px;letter-spacing:.06em;padding:5px 10px 5px 22px;border-radius:4px 8px 8px 4px;box-shadow:0 2px 6px rgba(0,0,0,.2)}
+.tag::before{content:"";position:absolute;left:8px;top:50%;width:7px;height:7px;margin-top:-3.5px;border-radius:50%;background:var(--surface);box-shadow:inset 0 0 0 1.5px rgba(0,0,0,.25)}
+.status{position:absolute;top:12px;right:12px;font-size:13px;font-weight:600;padding:4px 10px;border-radius:999px;background:var(--surface);color:var(--muted)}
+.status.ok{background:var(--ok-soft);color:var(--ok)}
+.body{padding:14px 16px 4px;display:grid;gap:10px}
+.who{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted);min-width:0}
+.who img{width:24px;height:24px;border-radius:50%}
+.who b{color:var(--ink);font-weight:600}
+.desc{margin:0;font-size:17px;white-space:pre-wrap;overflow-wrap:anywhere}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:13px;padding:3px 10px;border-radius:999px;background:var(--sunk);color:var(--ink)}
+.chip.place::before{content:"📍 "}
+.chip.keep{background:var(--accent-soft)}
+.card-actions{display:flex;gap:8px;flex-wrap:wrap;padding:6px 16px 14px}
+
+.comments{border-top:1px solid var(--line);background:var(--bg);padding:10px 16px 14px;display:grid;gap:8px}
+.toggle-c{background:none;border:0;padding:0;color:var(--muted);font-size:14px;cursor:pointer;text-align:left}
+.toggle-c:hover{color:var(--accent)}
+.c{display:flex;gap:8px;align-items:flex-start;font-size:15px}
+.c img{width:22px;height:22px;border-radius:50%;margin-top:2px}
+.c .t{min-width:0;overflow-wrap:anywhere}
+.c .t b{font-weight:600;margin-right:6px}
+.c .t span.time{color:var(--muted);font-size:12.5px;margin-left:6px}
+.c-form{display:flex;gap:8px}
+.c-form input{flex:1;min-width:0;background:var(--surface)}
+
+.empty{text-align:center;padding:40px 16px;color:var(--muted);border:2px dashed var(--line);border-radius:16px}
+.empty strong{display:block;font-family:var(--f-display);font-weight:500;color:var(--ink);font-size:18px;margin-bottom:4px}
+
+/* chat */
+.chat{display:grid;grid-template-columns:1fr;background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden;height:min(72vh,680px);min-height:420px}
+.chat .list{overflow-y:auto;min-width:0}
+.chat .thread{display:none;min-width:0;flex-direction:column}
+.chat.open .list{display:none}
+.chat.open .thread{display:flex}
+@media (min-width:720px){
+  .chat{grid-template-columns:280px 1fr}
+  .chat .list{display:block!important;border-right:1px solid var(--line)}
+  .chat .thread{display:flex}
+  .back{display:none!important}
+}
+.list-head{padding:14px 16px;font-family:var(--f-display);font-weight:500;font-size:17px;border-bottom:1px solid var(--line)}
+.ti{display:flex;gap:10px;padding:12px 16px;border:0;border-bottom:1px solid var(--line);background:none;width:100%;text-align:left;cursor:pointer;align-items:center}
+.ti:hover,.ti[aria-current="true"]{background:var(--sunk)}
+.ti .th{width:44px;height:44px;border-radius:8px;object-fit:cover;background:var(--sunk);flex:none}
+.ti .meta{min-width:0;flex:1}
+.ti .meta b{display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ti .meta span{display:block;color:var(--muted);font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ti .dot{width:10px;height:10px;border-radius:50%;background:var(--warn);flex:none}
+.thread-head{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line)}
+.thread-head .th{width:40px;height:40px;border-radius:8px;object-fit:cover;background:var(--sunk);flex:none}
+.thread-head .meta{min-width:0;flex:1}
+.thread-head .meta b{display:block;font-weight:600}
+.thread-head .meta span{display:block;color:var(--muted);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.back{border:0;background:var(--sunk);border-radius:8px;padding:6px 10px;cursor:pointer}
+.msgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:6px}
+.safety{font-size:13px;color:var(--muted);background:var(--sunk);border-radius:10px;padding:8px 12px;margin-bottom:6px}
+.m{max-width:78%;padding:8px 12px;border-radius:14px;background:var(--bubble);white-space:pre-wrap;overflow-wrap:anywhere;font-size:15.5px}
+.m.me{align-self:flex-end;background:var(--bubble-me);color:var(--bubble-me-ink);border-bottom-right-radius:4px}
+.m:not(.me){border-bottom-left-radius:4px}
+.m small{display:block;font-size:11.5px;opacity:.7;margin-top:2px}
+.send{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--line)}
+.send input{flex:1;min-width:0}
+.pick-thread{margin:auto;color:var(--muted);text-align:center;padding:24px}
+
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14.5px;z-index:20;max-width:calc(100% - 32px)}
+@media (max-width:480px){.shot{grid-template-columns:1fr}.photo-pick{aspect-ratio:16/9}}
+@media (prefers-reduced-motion:no-preference){.card{animation:in .25s ease-out}@keyframes in{from{transform:translateY(6px)}to{transform:none}}}
+</style>
+</head>
+<body>
+
+<header class="top"><div class="wrap">
+  <div class="brand"><div class="mark" aria-hidden="true">LF</div><div><h1>ของหายได้คืน</h1><small>เจอของในโรงเรียน ถ่ายรูปแล้วลงประกาศ</small></div></div>
+  <nav class="tabs" role="tablist">
+    <button id="tab-feed" role="tab" aria-selected="true">ประกาศ</button>
+    <button id="tab-chat" role="tab" aria-selected="false">แชต <span class="badge" id="unread" hidden>0</span></button>
+  </nav>
+</div></header>
+
+<main class="wrap">
+  <div id="status" class="notice" hidden></div>
+
+  <section id="view-feed">
+    <form class="composer" id="composer" autocomplete="off">
+      <h2>เจอของ? ลงประกาศเลย</h2>
+      <div class="shot">
+        <label class="photo-pick" id="pick">
+          <input type="file" id="photo" accept="image/*" capture="environment" aria-label="ถ่ายรูปหรือเลือกรูปของที่เจอ">
+          <span id="pick-hint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>ถ่ายรูป / เลือกรูป</span>
+          <img id="preview" alt="" hidden>
+        </label>
+        <textarea id="text" maxlength="500" placeholder="เจออะไร หน้าตาแบบไหน เช่น กระเป๋าดินสอสีกรมท่า มีพวงกุญแจแมว"></textarea>
+      </div>
+      <div class="row">
+        <div class="field"><label for="cat">หมวด</label><select id="cat"></select></div>
+        <div class="field"><label for="place">เจอที่ไหน</label><select id="place"></select></div>
+        <div class="field"><label for="keep">ตอนนี้ของอยู่ที่</label><select id="keep"></select></div>
+      </div>
+      <div class="actions">
+        <button class="btn" id="post-btn" type="submit">ลงประกาศ</button>
+        <span class="hint" id="post-hint">ไม่ต้องใส่ชื่อจริงหรือข้อมูลบนบัตรของเจ้าของ ให้เจ้าของทักมาบอกเอง</span>
+      </div>
+    </form>
+
+    <div class="filters">
+      <div class="filters-head"><h2>ของที่มีคนเจอ</h2><span class="count" id="count"></span></div>
+      <input type="search" id="q" placeholder="ค้นหา เช่น ขวดน้ำ, กุญแจ, สีชมพู" aria-label="ค้นหา">
+      <div class="row">
+        <div class="field"><label for="f-cat">หมวด</label><select id="f-cat"></select></div>
+        <div class="field"><label for="f-place">สถานที่</label><select id="f-place"></select></div>
+      </div>
+      <label class="chk"><input type="checkbox" id="f-hide" checked> ซ่อนของที่คืนเจ้าของแล้ว</label>
+    </div>
+    <div class="feed" id="feed"></div>
+  </section>
+
+  <section id="view-chat" hidden>
+    <div class="chat" id="chat">
+      <div class="list" id="thread-list"></div>
+      <div class="thread" id="thread">
+        <div class="pick-thread">เลือกแชตทางซ้าย หรือกด “ทักคนที่เจอ” ใต้ประกาศ</div>
+      </div>
+    </div>
+  </section>
+</main>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+const CATS=["กระเป๋าสตางค์/บัตร","กุญแจ","โทรศัพท์/หูฟัง/อุปกรณ์","ขวดน้ำ/กล่องข้าว","เสื้อผ้า/หมวก/รองเท้า","เครื่องเขียน/หนังสือ","กระเป๋า","เครื่องประดับ/นาฬิกา","อื่น ๆ"];
+const PLACES=["โรงอาหาร","อาคารเรียน 1","อาคารเรียน 2","อาคารเรียน 3","ห้องสมุด","สนามฟุตบอล","สนามบาส/โรงยิม","ลานหน้าเสาธง","ห้องน้ำ","ห้องคอมพิวเตอร์","หน้าโรงเรียน/ป้ายรถ","อื่น ๆ"];
+const KEEPS=["อยู่กับคนเจอ","ฝากห้องกิจการนักเรียน","ฝากห้องธุรการ","ฝากครูเวร"];
+
+const $=s=>document.querySelector(s);
+function h(tag,a,...kids){const el=document.createElement(tag);for(const k in (a||{})){const v=a[k];if(v==null||v===false)continue;if(k==="class")el.className=v;else if(k==="text")el.textContent=v;else if(k.startsWith("on"))el.addEventListener(k.slice(2),v);else el.setAttribute(k,v===true?"":v)}for(const c of kids.flat()){if(c==null||c===false)continue;el.append(c.nodeType?c:document.createTextNode(String(c)))}return el}
+function opts(sel,list,first){sel.replaceChildren(...(first?[h("option",{value:"all",text:first})]:[]),...list.map(x=>h("option",{value:x,text:x})))}
+opts($("#cat"),CATS);opts($("#place"),PLACES);opts($("#keep"),KEEPS);
+opts($("#f-cat"),CATS,"ทุกหมวด");opts($("#f-place"),PLACES,"ทุกที่");
+
+const S={db:null,user:null,assets:null,me:null,canWrite:null,posts:[],comments:[],chats:[],msgs:[],thread:null,unsubMsgs:null,open:new Set(),drafts:{},profiles:{},view:"feed",armed:null};
+const ago=t=>{const s=(Date.now()-t)/1000;if(s<60)return"เมื่อสักครู่";if(s<3600)return Math.floor(s/60)+" นาทีที่แล้ว";if(s<86400)return Math.floor(s/3600)+" ชม.ที่แล้ว";if(s<604800)return Math.floor(s/86400)+" วันที่แล้ว";return new Date(t).toLocaleDateString("th-TH",{day:"numeric",month:"short"})};
+const tagNo=id=>"LF-"+id.replace(/[^a-z0-9]/gi,"").slice(-4).toUpperCase();
+const img=id=>id?"/_blob/"+id:null;
+const P=id=>S.profiles[id]||{name:"",avatarUrl:""};
+const nm=id=>id===S.me?"คุณ":(P(id).name||"นักเรียนคนหนึ่ง");
+function toast(t){const el=$("#toast");el.textContent=t;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>el.hidden=true,2600)}
+function status(t,err){const el=$("#status");el.hidden=!t;el.textContent=t||"";el.classList.toggle("err",!!err)}
+const getRead=tid=>{try{return +localStorage.getItem("read:"+tid)||0}catch{return 0}};
+const setRead=(tid,v)=>{try{localStorage.setItem("read:"+tid,String(v))}catch{}};
+
+/* ---------- profiles ---------- */
+let profKey="";
+async function refreshProfiles(){
+  if(!S.user)return;
+  const ids=new Set();S.posts.forEach(p=>ids.add(p.by));S.comments.forEach(c=>ids.add(c.by));S.chats.forEach(c=>{ids.add(c.finder);ids.add(c.asker)});
+  ids.delete(undefined);if(!ids.size)return;
+  const ps=await S.user.profiles([...ids]);
+  const key=Object.values(ps).map(p=>p.id+p.name).join("|");
+  S.profiles=ps;if(key!==profKey){profKey=key;renderAll()}
+}
+
+/* ---------- views ---------- */
+function setView(v){
+  S.view=v;$("#view-feed").hidden=v!=="feed";$("#view-chat").hidden=v!=="chat";
+  $("#tab-feed").setAttribute("aria-selected",v==="feed");$("#tab-chat").setAttribute("aria-selected",v==="chat");
+  if(location.hash!=="#"+v)try{history.replaceState(null,"","#"+v)}catch{}
+  if(v==="chat")renderChat();
+}
+$("#tab-feed").onclick=()=>setView("feed");$("#tab-chat").onclick=()=>setView("chat");
+
+function renderAll(){
+  const a=document.activeElement,fid=a&&a.id,sel=a&&a.selectionStart;
+  renderFeed();renderChat();
+  if(fid&&document.activeElement!==document.getElementById(fid)){const el=document.getElementById(fid);if(el){el.focus();try{el.setSelectionRange(sel,sel)}catch{}}}
+}
+
+/* ---------- feed ---------- */
+["#q","#f-cat","#f-place","#f-hide"].forEach(s=>$(s).addEventListener("input",renderFeed));
+function renderFeed(){
+  const q=$("#q").value.trim().toLowerCase(),fc=$("#f-cat").value,fp=$("#f-place").value,hide=$("#f-hide").checked;
+  const list=S.posts.filter(p=>(fc==="all"||p.cat===fc)&&(fp==="all"||p.place===fp)&&(!hide||p.status!=="returned")&&(!q||[p.text,p.cat,p.place,p.keep,tagNo(p.id)].join(" ").toLowerCase().includes(q)));
+  $("#count").textContent=S.posts.length?`${list.length} รายการ`:"";
+  const feed=$("#feed");
+  if(!S.db){feed.replaceChildren(h("div",{class:"empty"},h("strong",{text:"กำลังเชื่อมต่อ…"}),"ประกาศของที่มีคนเจอจะขึ้นที่นี่"));return}
+  if(!S.posts.length){feed.replaceChildren(h("div",{class:"empty"},h("strong",{text:"ยังไม่มีประกาศ"}),"ถ้าคุณเจอของ ถ่ายรูปแล้วกด “ลงประกาศ” ด้านบน เป็นคนแรกได้เลย"));return}
+  if(!list.length){feed.replaceChildren(h("div",{class:"empty"},h("strong",{text:"ไม่เจอของที่ตรงกับที่ค้นหา"}),"ลองเปลี่ยนคำค้นหา หรือเลือก “ทุกหมวด / ทุกที่”"));return}
+  const byPost={};S.comments.forEach(c=>(byPost[c.post]||(byPost[c.post]=[])).push(c));
+  feed.replaceChildren(...list.map(p=>card(p,byPost[p.id]||[])));
+}
+function card(p,cs){
+  const mine=p.by===S.me,returned=p.status==="returned";
+  const pic=p.img?h("div",{class:"pic"},h("img",{src:img(p.img),alt:p.text||"รูปของที่เจอ",loading:"lazy",onerror:e=>e.target.remove()})):h("div",{class:"pic none"});
+  pic.append(h("span",{class:"tag",text:tagNo(p.id)}),h("span",{class:"status"+(returned?" ok":""),text:returned?"คืนเจ้าของแล้ว":"รอเจ้าของ"}));
+  const acts=h("div",{class:"card-actions"});
+  if(!mine&&S.me&&!returned)acts.append(h("button",{class:"btn small",type:"button",onclick:()=>startChat(p)},"ทักคนที่เจอ"));
+  if(mine&&S.canWrite!==false){
+    acts.append(h("button",{class:"btn small ghost",type:"button",onclick:()=>setStatus(p,returned?"open":"returned")},returned?"ยังไม่ได้คืน":"เจ้าของมารับแล้ว"));
+    const armed=S.armed===p.id;
+    acts.append(h("button",{class:"btn small ghost danger",type:"button",onclick:()=>delPost(p)},armed?"กดอีกครั้งเพื่อลบ":"ลบประกาศ"));
+  }
+  const open=S.open.has(p.id);
+  const com=h("div",{class:"comments"},h("button",{class:"toggle-c",type:"button","aria-expanded":open,onclick:()=>{open?S.open.delete(p.id):S.open.add(p.id);renderFeed()}},cs.length?(open?"ซ่อนความคิดเห็น":`ดูความคิดเห็น ${cs.length} รายการ`):(open?"ซ่อน":"แสดงความคิดเห็น")));
+  if(open){
+    cs.forEach(c=>com.append(h("div",{class:"c"},h("img",{src:P(c.by).avatarUrl||"",alt:""}),h("div",{class:"t"},h("b",{text:nm(c.by)}),c.text,h("span",{class:"time",text:ago(c.at)})))));
+    if(S.me&&S.canWrite!==false){
+      const inp=h("input",{type:"text",id:"c-in-"+p.id,maxlength:"300",placeholder:"เช่น น่าจะเป็นของเพื่อนห้อง 4/2",value:S.drafts[p.id]||"",oninput:e=>S.drafts[p.id]=e.target.value,"aria-label":"เขียนความคิดเห็น"});
+      com.append(h("form",{class:"c-form",onsubmit:e=>{e.preventDefault();addComment(p,inp)}},inp,h("button",{class:"btn small",type:"submit"},"ส่ง")));
+    }
+  }
+  return h("article",{class:"card"+(returned?" returned":"")},pic,
+    h("div",{class:"body"},
+      h("div",{class:"who"},h("img",{src:P(p.by).avatarUrl||"",alt:""}),h("span",null,h("b",{text:nm(p.by)})," เจอเมื่อ ",ago(p.at))),
+      p.text?h("p",{class:"desc",text:p.text}):null,
+      h("div",{class:"chips"},h("span",{class:"chip",text:p.cat}),h("span",{class:"chip place",text:p.place}),p.keep?h("span",{class:"chip keep",text:p.keep}):null)),
+    acts,com);
+}
+
+/* ---------- posting ---------- */
+let chosen=null;
+$("#photo").addEventListener("change",e=>{
+  chosen=e.target.files[0]||null;const pv=$("#preview");
+  if(chosen){pv.src=URL.createObjectURL(chosen);pv.hidden=false;$("#pick-hint").hidden=true}else{pv.hidden=true;$("#pick-hint").hidden=false}
+});
+function loadImg(f){return new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=URL.createObjectURL(f)})}
+async function shrink(f){
+  try{const im=await loadImg(f);const s=Math.min(1,1280/Math.max(im.naturalWidth,im.naturalHeight));const c=document.createElement("canvas");c.width=Math.round(im.naturalWidth*s);c.height=Math.round(im.naturalHeight*s);c.getContext("2d").drawImage(im,0,0,c.width,c.height);
+    const b=await new Promise((r,j)=>c.toBlob(x=>x?r(x):j(),"image/jpeg",.82));return{blob:b,type:"image/jpeg"}}
+  catch{if(/^image\/(jpeg|png|webp|gif)$/.test(f.type))return{blob:f,type:f.type};throw{code:"unsupported_type"}}
+}
+const upErr={too_large:"รูปใหญ่เกินไป ลองถ่ายใหม่",unsupported_type:"ไฟล์รูปนี้ใช้ไม่ได้ ลองเลือกรูป JPG หรือ PNG",quota_or_state:"พื้นที่เก็บรูปเต็มแล้ว ลองลงประกาศแบบไม่มีรูป",rate_limited:"อัปโหลดถี่เกินไป รอสักครู่แล้วลองใหม่"};
+$("#composer").addEventListener("submit",async e=>{
+  e.preventDefault();if(!S.db||!S.me)return;
+  const text=$("#text").value.trim();
+  if(!text&&!chosen){toast("ใส่รูปหรือเขียนว่าเจออะไรก่อน");return}
+  const btn=$("#post-btn");btn.disabled=true;btn.textContent="กำลังลงประกาศ…";
+  try{
+    let imgId=null;
+    if(chosen){if(!S.assets)throw{msg:"มุมมองนี้อัปโหลดรูปไม่ได้ ลบรูปออกแล้วลงประกาศเป็นข้อความได้"};const{blob,type}=await shrink(chosen);const r=await S.assets.upload(blob,{type});imgId=r.id}
+    await S.db.collection("posts").add({by:S.me,text,cat:$("#cat").value,place:$("#place").value,keep:$("#keep").value,img:imgId,status:"open",at:Date.now()});
+    $("#composer").reset();chosen=null;$("#preview").hidden=true;$("#pick-hint").hidden=false;toast("ลงประกาศแล้ว");
+  }catch(err){toast(err.msg||upErr[err.code]||(err.code==="invalid_argument"?"คุณไม่มีสิทธิ์ลงประกาศในหน้านี้":"ลงประกาศไม่สำเร็จ ลองอีกครั้ง"))}
+  finally{btn.disabled=false;btn.textContent="ลงประกาศ"}
+});
+async function addComment(p,inp){
+  const text=inp.value.trim();if(!text)return;
+  try{await S.db.collection("comments").add({post:p.id,by:S.me,text,at:Date.now()});S.drafts[p.id]="";inp.value=""}catch{toast("ส่งความคิดเห็นไม่สำเร็จ")}
+}
+async function setStatus(p,st){try{await S.db.doc("posts/"+p.id).update({status:st});toast(st==="returned"?"ทำเครื่องหมายว่าคืนแล้ว":"เปิดประกาศอีกครั้ง")}catch{toast("อัปเดตไม่สำเร็จ")}}
+async function delPost(p){
+  if(S.armed!==p.id){S.armed=p.id;renderFeed();setTimeout(()=>{if(S.armed===p.id){S.armed=null;renderFeed()}},3500);return}
+  S.armed=null;
+  try{await S.db.doc("posts/"+p.id).delete();if(p.img&&S.assets)S.assets.delete(p.img).catch(()=>{});toast("ลบประกาศแล้ว")}catch{toast("ลบไม่สำเร็จ")}
+}
+
+/* ---------- chat ---------- */
+const myThreads=()=>S.chats.filter(c=>c.finder===S.me||c.asker===S.me).sort((a,b)=>(b.lastAt||0)-(a.lastAt||0));
+const other=c=>c.finder===S.me?c.asker:c.finder;
+const unread=c=>c.lastBy&&c.lastBy!==S.me&&(c.lastAt||0)>getRead(c.id);
+async function startChat(p){
+  const tid=p.id+"__"+S.me;
+  try{
+    const ref=S.db.doc("chats/"+tid);const snap=await ref.get();
+    if(!snap.exists)await ref.set({post:p.id,finder:p.by,asker:S.me,at:Date.now(),lastAt:Date.now(),lastBy:null,lastText:""});
+    openThread(tid);setView("chat");
+  }catch{toast("เปิดแชตไม่สำเร็จ")}
+}
+function openThread(tid){
+  if(S.thread===tid)return;
+  S.thread=tid;S.msgs=[];if(S.unsubMsgs)S.unsubMsgs();
+  S.unsubMsgs=S.db.collection("msgs").where("tid","==",tid).orderBy("at","asc").limit(500).onSnapshot(s=>{S.msgs=s.docs.map(d=>({id:d.id,...d.data()}));renderChat(true)},()=>toast("โหลดข้อความไม่สำเร็จ"));
+  renderChat(true);
+}
+function renderChat(scroll){
+  const ts=S.me?myThreads():[];
+  const n=ts.filter(unread).length;$("#unread").textContent=n;$("#unread").hidden=!n;
+  if(S.view!=="chat")return;
+  const list=$("#thread-list");
+  list.replaceChildren(h("div",{class:"list-head",text:"แชตของฉัน"}),
+    ...(ts.length?ts.map(c=>{const p=S.posts.find(x=>x.id===c.post);return h("button",{class:"ti",type:"button","aria-current":c.id===S.thread,onclick:()=>openThread(c.id)},
+      p&&p.img?h("img",{class:"th",src:img(p.img),alt:""}):h("div",{class:"th"}),
+      h("div",{class:"meta"},h("b",{text:nm(other(c))}),h("span",{text:c.lastText||(c.finder===S.me?"ทักมาเรื่องของที่คุณเจอ":"ของ "+(p?tagNo(p.id):"")+" · "+(p?p.text||p.cat:"ประกาศถูกลบแล้ว"))})),
+      unread(c)?h("span",{class:"dot","aria-label":"ข้อความใหม่"}):null)})
+    :[h("div",{class:"pick-thread"},S.me?"ยังไม่มีแชต กด “ทักคนที่เจอ” ใต้ประกาศของที่เป็นของคุณ":"เข้าสู่ระบบ claude.ai เพื่อใช้แชต")]));
+  const box=$("#thread"),chatEl=$("#chat"),c=S.chats.find(x=>x.id===S.thread);
+  chatEl.classList.toggle("open",!!c);
+  if(!c){box.replaceChildren(h("div",{class:"pick-thread"},"เลือกแชต หรือกด “ทักคนที่เจอ” ใต้ประกาศ"));return}
+  if((c.lastAt||0)>getRead(c.id)){setRead(c.id,c.lastAt);$("#unread").textContent=ts.filter(unread).length;$("#unread").hidden=!ts.filter(unread).length;list.querySelector('[aria-current="true"] .dot')?.remove()}
+  const p=S.posts.find(x=>x.id===c.post);
+  const old=$("#msg-list"),keepScroll=old&&!scroll?old.scrollTop:null;
+  const msgs=h("div",{class:"msgs",id:"msg-list"},
+    h("div",{class:"safety"},c.asker===S.me?"ก่อนรับของ บอกรายละเอียดที่มีแต่เจ้าของรู้ เช่น ของที่อยู่ข้างใน หรือรอยตำหนิ แล้วนัดรับในที่มีคนเห็น เช่น ห้องกิจการนักเรียน":"ก่อนคืนของ ถามรายละเอียดที่มีแต่เจ้าของจริงรู้ แล้วนัดคืนในที่มีคนเห็น เช่น ห้องกิจการนักเรียน","  ข้อความในเว็บนี้ไม่ใช่แชตลับ อย่าส่งเบอร์โทรหรือข้อมูลส่วนตัว"),
+    ...S.msgs.map(m=>h("div",{class:"m"+(m.by===S.me?" me":"")},m.text,h("small",{text:ago(m.at)}))));
+  const inp=$("#msg-in")||h("input",{type:"text",id:"msg-in",maxlength:"500",placeholder:"พิมพ์ข้อความ","aria-label":"พิมพ์ข้อความ"});
+  box.replaceChildren(
+    h("div",{class:"thread-head"},h("button",{class:"back",type:"button",onclick:()=>{S.thread=null;if(S.unsubMsgs)S.unsubMsgs();S.unsubMsgs=null;renderChat()}},"← กลับ"),
+      p&&p.img?h("img",{class:"th",src:img(p.img),alt:""}):h("div",{class:"th"}),
+      h("div",{class:"meta"},h("b",{text:nm(other(c))}),h("span",{text:p?`${tagNo(p.id)} · ${p.text||p.cat} · ${p.place}`:"ประกาศนี้ถูกลบแล้ว"}))),
+    msgs,
+    h("form",{class:"send",onsubmit:e=>{e.preventDefault();sendMsg(c,inp)}},inp,h("button",{class:"btn small",type:"submit"},"ส่ง")));
+  msgs.scrollTop=keepScroll??msgs.scrollHeight;
+}
+async function sendMsg(c,inp){
+  const text=inp.value.trim();if(!text)return;inp.value="";
+  try{const at=Date.now();await S.db.collection("msgs").add({tid:c.id,by:S.me,text,at});await S.db.doc("chats/"+c.id).update({lastAt:at,lastBy:S.me,lastText:text.slice(0,80)});setRead(c.id,at)}
+  catch{inp.value=text;toast("ส่งข้อความไม่สำเร็จ")}
+}
+
+/* ---------- boot ---------- */
+setView(location.hash==="#chat"?"chat":"feed");
+renderFeed();
+(async()=>{
+  if(!window.claude||!claude.use){status("เปิดหน้านี้ใน claude.ai เพื่อใช้งานประกาศและแชต");return}
+  const [db,user,assets]=await Promise.all([claude.use("db"),claude.use("user"),claude.use("assets")]);
+  S.db=db;S.user=user;S.assets=assets;
+  if(!db){status("เข้าสู่ระบบ claude.ai ก่อน จึงจะดูและลงประกาศได้",true);renderFeed();return}
+  S.me=user?await user.id():null;S.canWrite=user?await user.can("data.write"):null;
+  if(!S.me||S.canWrite===false){$("#composer").hidden=true;status(S.me?"คุณดูประกาศได้อย่างเดียว ขอสิทธิ์ Contributor จากเจ้าของหน้าเพื่อลงประกาศและแชต":"เข้าสู่ระบบเพื่อลงประกาศและแชต")}
+  else if(!assets){$("#post-hint").textContent="มุมมองนี้อัปโหลดรูปไม่ได้ ลงประกาศเป็นข้อความได้"}
+  const fail=()=>status("โหลดข้อมูลไม่สำเร็จ ลองรีเฟรชหน้า",true);
+  db.collection("posts").orderBy("at","desc").limit(300).onSnapshot(s=>{S.posts=s.docs.map(d=>({id:d.id,...d.data()}));renderAll();refreshProfiles()},fail);
+  db.collection("comments").orderBy("at","asc").limit(1000).onSnapshot(s=>{S.comments=s.docs.map(d=>({id:d.id,...d.data()}));renderAll();refreshProfiles()},fail);
+  db.collection("chats").orderBy("lastAt","desc").limit(500).onSnapshot(s=>{S.chats=s.docs.map(d=>({id:d.id,...d.data()}));renderChat();refreshProfiles()},fail);
+  renderFeed();
+})();
+</script>
+</body>
+</html>
